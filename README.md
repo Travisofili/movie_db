@@ -35,3 +35,30 @@ end
 ```
 
 While this implementation would also have it's own difficulties, it would allow for other models representing directors and writers to access the Movie model using a single association rather than continuing to add more associations for the additional models.
+
+---
+
+It has also occurred to me that there is yet another way one could model this data in the database. The role an actor takes in a movie could be represented by a join table that allows for the storage of key/value pairs for specific model attributes. To implement this style of solution, one would start by moving from the SQLite to PostgreSQL so that Hstore could be utilized to provide just the type of functionality desired. Here are the changes to the Gemfile:
+
+```
+# Remove SQLite
+# gem 'sqlite3'
+
+# Add
+gem 'pg'
+gem 'activerecord-postgres-hstore'
+```
+After running bundler and setting up hstore, a migration could be generated that would allow for the use of the hstore data type. It might look something like this:
+
+```
+rails g model casting actor_id:integer movie_id:integer actor:boolean director:boolean writer:boolean details:hstore
+```
+
+Alternatively, the migration could also look like this:
+
+```
+rails g model casting actor_id:integer movie_id:integer role:hstore details:hstore
+```
+
+Either way, this would allow the role an actor plays in a movie to be accounted for, either by a boolean or a hash of values stored in role. This would also allow for an actor to have multiple characters in a single movie by placing the actor's characters in an array that is stored in details. Indeed, the details field in the database could hold many other values in addition to character, but for this particular problem it would not be necessary. As with the original implementation and my other reflection, this would have it's own drawbacks. This would definitely require creating custom class methods that could retrieve movies based on an actor's role, or roles, in a movie and whether or not they played multiple characters. Despite this added layer of complexity, this approach would also reduce the number of tables required to model the relationship between actors and movies.
+
